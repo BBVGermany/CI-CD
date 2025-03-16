@@ -37,12 +37,3 @@ runs:
         tags: ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:${{ inputs.TAG }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-    
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        push: true
-        tags: user/app:latest
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
