@@ -43,7 +43,7 @@ runs:
     - name: Delete images without tag
       shell: bash
       run: |
-        doctl registry repository list-manifests bbv-backend --format Digest,Tags --no-header | awk -F '\t' 'NF==1 {print $1}' | while read -r DIGEST; do
+        doctl registry repository list-manifests bbv-backend --format Digest,Tags --no-header | awk -F ', ' '$2 == "" {print $1}' | while read -r DIGEST; do
             echo "Deleting untagged image: $DIGEST"
             doctl registry repository delete-manifest bbv-backend "$DIGEST" --force
         done
