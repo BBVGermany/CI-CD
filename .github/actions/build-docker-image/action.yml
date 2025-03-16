@@ -10,6 +10,8 @@ inputs:
   TAG:
     description: 'DigitalOcean Registry Tag'
     required: true
+  DIGITALOCEAN_ACCESS_TOKEN:
+    description: "DigitalOcean Access token"
  
 runs:
   using: composite
@@ -24,8 +26,8 @@ runs:
       uses: docker/login-action@v3
       with:
         registry: ${{ inputs.REGISTRY_URL }}
-        username: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-        password: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+        username: ${{ inputs.DIGITALOCEAN_ACCESS_TOKEN }}
+        password: ${{ inputs.DIGITALOCEAN_ACCESS_TOKEN }}
 
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
