@@ -1,0 +1,58 @@
+name: Delete Docker Image
+description: Delete Docker image from DigitalOcean Registry
+inputs:
+  DIGITALOCEAN_ACCESS_TOKEN:
+    required: true
+    description: "DigitalOcean API Token"
+  DELETE_IMAGE_WITHOUT_TAG:
+    required: true
+    description: "Delete image without tag"
+  EXCLUDE_TAGS:
+    required: true
+    description: "Exclude tags"
+  EXCLUDE_RECENT_IMAGES_N:
+    required: true
+    description: "Exclude recent images"
+  DO_REPOSITORY:
+    required: true
+    description: "DigitalOcean Registry Repository"
+
+
+runs:
+  using: "composite"
+  steps:
+    - name: Delete old images in the registry
+      run: |
+        # Get list of tags, excluding certain patterns
+        EXCLUDE_PATTERN=${{ inputs.EXCLUDE_TAGS }}
+        RECENT_N=${{ inputs.EXCLUDE_RECENT_IMAGES_N }}
+
+        FILTERED_TAGS=$(doctl registry repository list-tags ${{ inputs.DO_REPOSITORY }} --format Tag --no-header)
+
+        if [[ -n "$EXCLUDE_PATTERN" ]]; then
+            FILTERED_TAGS=$(echo "$FILTERED_TAGS" | grep -Ev "$EXCLUDE_PATTERN")
+        fi
+
+        if [[ -n "$RECENT_N" && "$RECENT_N" -gt 0 ]]; then
+            FILTERED_TAGS=$(echo "$FILTERED_TAGS" | tail -n +$RECENT_N)
+        fi
+
+        # Loop through each tag and delete it
+        echo "$FILTERED_TAGS" | while read -r TAG; do
+          echo "Processing tag: $TAG"
+
+          # Find digest for the tag
+          DIGEST=$(doctl registry repository list-manifests ${{ inputs.DO_REPOSITORY }} --format Digest,Tags --no-header | awk -v tag="$TAG" '$0 ~ tag {print $1}')
+
+          # Delete tag
+          doctl registry repository delete-tag ${{ inputs.DO_REPOSITORY }} "$TAG" --force
+
+          # Delete image digest if available
+          if [[ -n "$DIGEST" ]]; then
+              echo "Deleting image digest: $DIGEST"
+              doctl registry repository delete-manifest ${{ inputs.DO_REPOSITORY }} "$DIGEST" --force
+          else
+              echo "No digest found for tag: $TAG (maybe shared with other tags)"
+          fi
+        done  
+      shell: bash
