@@ -1,6 +1,9 @@
 name: B-P .NET Docker Image
 description: Build and push .NET Docker image to DigitalOcean Registry
 inputs:
+  REGISTRY_URL:
+    description: 'DigitalOcean Registry URL'
+    required: true
   REPOSITORY:
     description: 'DigitalOcean Registry Repository'
     required: true
@@ -17,7 +20,7 @@ runs:
     - name: Build container image
       run: |
         SHORT_SHA=$(echo $GITHUB_SHA | head -c7)
-        docker build -t ${{ secrets.DO_REGISTRY_URL }}/${{ inputs.REPOSITORY }}:$SHORT_SHA .
+        docker build -t ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:$SHORT_SHA .
       shell: bash
 
     - name: Push image to DigitalOcean Container Registry
@@ -28,9 +31,9 @@ runs:
         # Debugging - Check if image exists
         docker images | grep $SHORT_SHA || echo "Image not found!"
 
-        docker tag ${{ secrets.DO_REGISTRY_URL }}/${{ inputs.REPOSITORY }}:$SHORT_SHA ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:${{ inputs.TAG }}
-        docker tag ${{ secrets.DO_REGISTRY_URL }}/${{ inputs.REPOSITORY }}:$SHORT_SHA ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:$TIMESTAMP
+        docker tag ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:$SHORT_SHA ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:${{ inputs.TAG }}
+        docker tag ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:$SHORT_SHA ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:$TIMESTAMP
 
-        docker push ${{ secrets.DO_REGISTRY_URL }}/${{ inputs.REPOSITORY }}:${{ inputs.TAG }}
-        docker push ${{ secrets.DO_REGISTRY_URL }}/${{ inputs.REPOSITORY }}:$TIMESTAMP
+        docker push ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:${{ inputs.TAG }}
+        docker push ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:$TIMESTAMP
       shell: bash

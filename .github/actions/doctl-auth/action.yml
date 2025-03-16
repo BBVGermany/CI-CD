@@ -1,5 +1,9 @@
 name: DigitalOcean Authentication
 description: Logs into DigitalOcean Registry
+inputs:
+  DIGITALOCEAN_ACCESS_TOKEN:
+    required: true
+    description: "DigitalOcean API Token"
 
 runs:
   using: "composite"
@@ -7,7 +11,7 @@ runs:
     - name: Install doctl
       uses: digitalocean/action-doctl@v2
       with:
-        token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+        token: ${{ inputs.DIGITALOCEAN_ACCESS_TOKEN }}
 
     - name: Log in to DigitalOcean Container Registry
       run: doctl registry login --expiry-seconds 600
