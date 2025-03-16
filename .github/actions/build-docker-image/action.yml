@@ -1,7 +1,7 @@
 name: B-P .NET Docker Image
 description: Build and push .NET Docker image to DigitalOcean Registry
 inputs:
-  RESITRY_URL:
+  REGISTRY_URL:
     description: 'DigitalOcean Registry URL'
     required: true
   REPOSITORY:
@@ -16,7 +16,7 @@ runs:
   steps:
     - name: Checkout repository
       uses: actions/checkout@v3
-      
+
     - name: Build container image
       run: docker build -t ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:${{ github.sha }} .
       shell: bash
