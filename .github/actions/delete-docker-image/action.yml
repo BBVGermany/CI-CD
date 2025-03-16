@@ -7,10 +7,10 @@ inputs:
   DELETE_IMAGE_WITHOUT_TAG:
     required: true
     description: "Delete image without tag"
-  EXCLUDE_TAGS:
+  SKIPPING_TAGS:
     required: true
     description: "Exclude tags"
-  EXCLUDE_RECENT_IMAGES_N:
+  SKIPPING_IMAGES:
     required: true
     description: "Exclude recent images"
   DO_REPOSITORY:
