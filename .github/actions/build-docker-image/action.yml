@@ -1,0 +1,34 @@
+name: B-P .NET Docker Image
+description: Build and push .NET Docker image to DigitalOcean Registry
+inputs:
+  RESITRY_URL:
+    description: 'DigitalOcean Registry URL'
+    required: true
+  REPOSITORY:
+    description: 'DigitalOcean Registry Repository'
+    required: true
+  TAG:
+    description: 'DigitalOcean Registry Tag'
+    required: true
+ 
+runs:
+  using: composite
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      
+    - name: Build container image
+      run: docker build -t ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:${{ github.sha }} .
+      shell: bash
+
+    - name: Push image to DigitalOcean Container Registry
+      run: |
+        TIMESTAMP=$(date +%Y%m%d%H%M%S)
+        SHORT_SHA=$(echo $GITHUB_SHA | head -c7)
+        
+        docker tag ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:$SHORT_SHA ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:${{ inputs.TAG }}
+        docker tag ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:$SHORT_SHA ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:$TIMESTAMP
+        
+        docker push ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:${{ inputs.TAG }}
+        docker push ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:$TIMESTAMP
+      shell: bash
