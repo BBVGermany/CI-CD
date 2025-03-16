@@ -18,17 +18,22 @@ runs:
       uses: actions/checkout@v3
 
     - name: Build container image
-      run: docker build -t ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:${{ github.sha }} .
+      run: |
+        SHORT_SHA=$(echo $GITHUB_SHA | head -c7)
+        docker build -t ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:$SHORT_SHA .
       shell: bash
 
     - name: Push image to DigitalOcean Container Registry
       run: |
         TIMESTAMP=$(date +%Y%m%d%H%M%S)
         SHORT_SHA=$(echo $GITHUB_SHA | head -c7)
-        
+
+        # Debugging - Check if image exists
+        docker images | grep $SHORT_SHA || echo "Image not found!"
+
         docker tag ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:$SHORT_SHA ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:${{ inputs.TAG }}
         docker tag ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:$SHORT_SHA ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:$TIMESTAMP
-        
+
         docker push ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:${{ inputs.TAG }}
         docker push ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}:$TIMESTAMP
       shell: bash
