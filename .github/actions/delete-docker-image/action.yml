@@ -17,42 +17,63 @@ inputs:
     required: true
     description: "DigitalOcean Registry Repository"
 
-
 runs:
   using: "composite"
   steps:
     - name: Delete old images in the registry
       run: |
-        # Get list of tags, excluding certain patterns
-        EXCLUDE_PATTERN=${{ inputs.EXCLUDE_TAGS }}
-        RECENT_N=${{ inputs.EXCLUDE_RECENT_IMAGES_N }}
+        set -e  # Exit on error for debugging
 
-        FILTERED_TAGS=$(doctl registry repository list-tags ${{ inputs.DO_REPOSITORY }} --format Tag --no-header)
+        EXCLUDE_PATTERN="${{ inputs.EXCLUDE_TAGS }}"
+        RECENT_N="${{ inputs.EXCLUDE_RECENT_IMAGES_N }}"
+        REPO="${{ inputs.DO_REPOSITORY }}"
 
+        echo "Fetching image tags from repository: $REPO"
+        FILTERED_TAGS=$(doctl registry repository list-tags "$REPO" --format Tag --no-header || echo "")
+
+        if [[ -z "$FILTERED_TAGS" ]]; then
+          echo "No tags found in the repository. Exiting."
+          exit 0
+        fi
+
+        echo "Initial tags found:"
+        echo "$FILTERED_TAGS"
+
+        # Apply exclude pattern if set
         if [[ -n "$EXCLUDE_PATTERN" ]]; then
-            FILTERED_TAGS=$(echo "$FILTERED_TAGS" | grep -Ev "$EXCLUDE_PATTERN")
+            echo "Excluding tags matching pattern: $EXCLUDE_PATTERN"
+            FILTERED_TAGS=$(echo "$FILTERED_TAGS" | grep -Ev "$EXCLUDE_PATTERN" || echo "")
         fi
 
+        # Exclude recent images
         if [[ -n "$RECENT_N" && "$RECENT_N" -gt 0 ]]; then
-            FILTERED_TAGS=$(echo "$FILTERED_TAGS" | tail -n +$RECENT_N)
+            echo "Excluding the last $RECENT_N images"
+            FILTERED_TAGS=$(echo "$FILTERED_TAGS" | tail -n +$((RECENT_N + 1)) || echo "")
         fi
 
-        # Loop through each tag and delete it
-        echo "$FILTERED_TAGS" | while read -r TAG; do
+        # Debugging: show final list of tags
+        echo "Tags to delete:"
+        echo "$FILTERED_TAGS"
+
+        # Loop through and delete each tag
+        while IFS= read -r TAG; do
+          [[ -z "$TAG" ]] && continue
           echo "Processing tag: $TAG"
 
-          # Find digest for the tag
-          DIGEST=$(doctl registry repository list-manifests ${{ inputs.DO_REPOSITORY }} --format Digest,Tags --no-header | awk -v tag="$TAG" '$0 ~ tag {print $1}')
+          # Find digest
+          DIGEST=$(doctl registry repository list-manifests "$REPO" --format Digest,Tags --no-header | awk -v tag="$TAG" '$0 ~ tag {print $1}')
 
           # Delete tag
-          doctl registry repository delete-tag ${{ inputs.DO_REPOSITORY }} "$TAG" --force
+          echo "Deleting tag: $TAG"
+          doctl registry repository delete-tag "$REPO" "$TAG" --force || echo "Failed to delete tag: $TAG"
 
           # Delete image digest if available
           if [[ -n "$DIGEST" ]]; then
               echo "Deleting image digest: $DIGEST"
-              doctl registry repository delete-manifest ${{ inputs.DO_REPOSITORY }} "$DIGEST" --force
+              doctl registry repository delete-manifest "$REPO" "$DIGEST" --force || echo "Failed to delete digest: $DIGEST"
           else
               echo "No digest found for tag: $TAG (maybe shared with other tags)"
           fi
-        done  
+        done <<< "$FILTERED_TAGS"
+
       shell: bash
