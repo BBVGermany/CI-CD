@@ -1,23 +1,19 @@
-name: ✅ Validate Branch Name
+name: Check Branch Name
+description: Validates that a branch name matches allowed naming conventions.
 
-on:
-  push:
-    branches:
-      - '**'
+runs:
+  using: "composite"
+  steps:
+    - name: Check branch name
+      shell: bash
+      run: |
+        branch="${GITHUB_REF##*/}"
+        echo "🔎 Checking branch: $branch"
 
-jobs:
-  check-branch:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check branch name
-        run: |
-          branch="${GITHUB_REF##*/}"
-          echo "🔎 Checking branch: $branch"
-
-          if [[ "$branch" =~ ^(feature|fix)/.+$ || "$branch" =~ ^stable-v[0-9]+$ ]]; then
-            echo "✅ Branch name is valid!"
-          else
-            echo "❌ Invalid branch name: '$branch'"
-            echo "Allowed patterns: 'feature/...', 'fix/...', or 'stable-v<number>'"
-            exit 1
-          fi
+        if [[ "$branch" =~ ^(feature|fix)/.+$ || "$branch" =~ ^stable-v[0-9]+$ ]]; then
+          echo "✅ Branch name is valid!"
+        else
+          echo "❌ Invalid branch name: '$branch'"
+          echo "Allowed patterns: 'feature/...', 'fix/...', or 'stable-v<number>'"
+          exit 1
+        fi
