@@ -1,7 +1,9 @@
-# .github/workflows/check-branch-name.yml
-name: Validate Branch Name
+name: ✅ Validate Branch Name
 
-on: [push]
+on:
+  push:
+    branches:
+      - '**'
 
 jobs:
   check-branch:
@@ -10,7 +12,12 @@ jobs:
       - name: Check branch name
         run: |
           branch="${GITHUB_REF##*/}"
-          if [[ ! "$branch" =~ ^(feature|fix)/.+ ]]; then
-            echo "❌ Branch name must start with 'feature/' or 'fix/'"
+          echo "🔎 Checking branch: $branch"
+
+          if [[ "$branch" =~ ^(feature|fix)/.+$ || "$branch" =~ ^stable-v[0-9]+$ ]]; then
+            echo "✅ Branch name is valid!"
+          else
+            echo "❌ Invalid branch name: '$branch'"
+            echo "Allowed patterns: 'feature/...', 'fix/...', or 'stable-v<number>'"
             exit 1
           fi
