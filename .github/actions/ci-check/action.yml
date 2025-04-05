@@ -1,0 +1,16 @@
+# .github/workflows/check-branch-name.yml
+name: Validate Branch Name
+
+on: [push]
+
+jobs:
+  check-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name
+        run: |
+          branch="${GITHUB_REF##*/}"
+          if [[ ! "$branch" =~ ^(feature|fix)/.+ ]]; then
+            echo "❌ Branch name must start with 'feature/' or 'fix/'"
+            exit 1
+          fi
