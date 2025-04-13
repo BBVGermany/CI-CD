@@ -4,13 +4,17 @@ inputs:
   baseUrl:
     description: 'Base URL for Cypress tests'
     required: true
+  auth_required:
+    description: 'Set to true if basic auth is required'
+    required: true
   auth_username:
-    required: true
+    required: false
   auth_password:
-    required: true
+    required: false
   token:
     description: 'GitHub token to install private package'
     required: true
+  
 
 runs:
   using: "composite"
@@ -38,4 +42,4 @@ runs:
       shell: bash
       working-directory: ./cypress-test
       run: |
-        npx cypress run --config baseUrl='${{ inputs.baseUrl }}' --env auth_username=${{ inputs.auth_username }},auth_password=${{ inputs.auth_password }},basic_auth=true
+        npx cypress run --config baseUrl='${{ inputs.baseUrl }}' --env auth_username=${{ inputs.auth_username }},auth_password=${{ inputs.auth_password }},basic_auth=${{ inputs.auth_required }}
