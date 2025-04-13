@@ -1,0 +1,41 @@
+name: 'Run Custom Cypress Package'
+description: 'Set up test environment, install Cypress package, and run tests'
+inputs:
+  baseUrl:
+    description: 'Base URL for Cypress tests'
+    required: true
+  auth_username:
+    required: true
+  auth_password:
+    required: true
+  token:
+    description: 'GitHub token to install private package'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: 🏗️ Create clean test environment
+      shell: bash
+      run: |
+        mkdir cypress-test
+        cd cypress-test
+        npm init -y
+
+    - name: 📦 Install your private Cypress package
+      shell: bash
+      working-directory: ./cypress-test
+      env: 
+        NODE_AUTH_TOKEN: ${{ inputs.token }}
+      run: npm install @bbvgermany/cypresss
+
+    - name: 📁 Copy package contents into working directory
+      shell: bash
+      working-directory: ./cypress-test
+      run: cp -r node_modules/@bbvgermany/cypresss/* .
+
+    - name: 🚀 Run Cypress tests
+      shell: bash
+      working-directory: ./cypress-test
+      run: |
+        npx cypress run --config baseUrl='${{ inputs.baseUrl }}' --env auth_username=${{ inputs.auth_username }},auth_password=${{ inputs.auth_password }},basic_auth=true
