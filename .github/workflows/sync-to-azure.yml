@@ -23,11 +23,11 @@ jobs:
         run: echo "${{ secrets.GHP }}" | gh auth login --with-token
 
       - name: Authenticate Azure DevOps API
-        run: echo "${{ secrets.AZURE_PAT }}" > azure_token.txt
+        run: echo "${{ secrets.ADO }}" > azure_token.txt
 
       - name: Get Repos and Mirror to Azure
         env:
-          GITHUB_ORG: bbvgermany
+          GITHUB_ORG: BBVGermany
           AZURE_ORG: ${{ secrets.ADO_ORG }}
           AZURE_PROJECT: ${{ secrets.ADO_PRO }}
           AZURE_PAT: ${{ secrets.ADO }}
@@ -43,16 +43,23 @@ jobs:
             RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -u ":${AZURE_PAT}" \
               "https://dev.azure.com/$AZURE_ORG/$AZURE_PROJECT/_apis/git/repositories?searchText=$REPO&api-version=7.1-preview.1")
 
-            # If repo doesn't exist (404), create it
             if [ "$RESPONSE" -eq 404 ]; then
               echo "Creating repository $REPO in Azure DevOps..."
-              curl -X POST -u ":${AZURE_PAT}" \
+              CREATE_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST -u ":${AZURE_PAT}" \
                 -H "Content-Type: application/json" \
                 -d '{
                       "name": "'"$REPO"'",
                       "project": { "id": "'"$AZURE_PROJECT"'" }
                     }' \
-                "https://dev.azure.com/$AZURE_ORG/_apis/git/repositories?api-version=7.1-preview.1"
+                "https://dev.azure.com/$AZURE_ORG/_apis/git/repositories?api-version=7.1-preview.1")
+
+              if [ "$CREATE_RESPONSE" -ne 201 ]; then
+                echo "❌ Failed to create repository $REPO. HTTP status: $CREATE_RESPONSE"
+                exit 1
+              fi
+            elif [ "$RESPONSE" -ne 200 ]; then
+              echo "❌ Unexpected response while checking repository $REPO. HTTP status: $RESPONSE"
+              exit 1
             fi
 
             # Clone the repo from GitHub
