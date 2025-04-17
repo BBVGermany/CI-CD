@@ -39,7 +39,7 @@ jobs:
             git clone --mirror "https://$GITHUB_TOKEN@github.com/$GITHUB_ORG/$REPO.git"
             cd "$REPO.git"
 
-            git remote add azure "https://$AZURE_PAT@dev.azure.com/$AZURE_ORG/$AZURE_PROJECT/_git/$REPO"
+            git remote add azure "https://user:$AZURE_PAT@dev.azure.com/$AZURE_ORG/$AZURE_PROJECT/_git/$REPO"
             git push --mirror azure
 
             cd ..
