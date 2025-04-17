@@ -1,6 +1,9 @@
 name: Mirror All GitHub Repos to Azure
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:  # you run it manually, or add `schedule` for auto-sync
 
 jobs:
