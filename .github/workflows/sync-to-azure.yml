@@ -24,7 +24,7 @@ jobs:
 
       - name: Get Repos and Mirror to Azure
         env:
-          GITHUB_ORG: bbvgermany
+          GITHUB_ORG: BBVGermany
           AZURE_ORG: ${{ secrets.ADO_ORG }}
           AZURE_PROJECT: ${{ secrets.ADO_PRO }}
           AZURE_PAT: ${{ secrets.AZURE_PAT }}
