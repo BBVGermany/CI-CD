@@ -23,7 +23,7 @@ jobs:
         run: echo "${{ secrets.GHP }}" | gh auth login --with-token
 
       - name: Authenticate Azure DevOps API
-        run: echo "${{ secrets.AZURE_PAT }}" > azure_token.txt
+        run: echo "${{ secrets.ADO }}" > azure_token.txt
 
       - name: Get Repos and Mirror to Azure
         env:
