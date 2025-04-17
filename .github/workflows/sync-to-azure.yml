@@ -42,7 +42,7 @@ jobs:
         run: |
           echo "📥 Fetching repositories from GitHub org $GITHUB_ORG..."
           az repos list \
-          --organization "https://dev.azure.com/$ADO_ORG" \
+          --organization "https://dev.azure.com/BBVGermany" \
           --project "$ADO_PRO" \
           --query "[].name" -o tsv > azure_repos.txt
 
