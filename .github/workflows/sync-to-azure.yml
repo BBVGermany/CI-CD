@@ -23,11 +23,11 @@ jobs:
         run: echo "${{ secrets.GHP }}" | gh auth login --with-token
 
       - name: Authenticate Azure DevOps API
-        run: echo "${{ secrets.ADO }}" > azure_token.txt
+        run: echo "${{ secrets.AZURE_PAT }}" > azure_token.txt
 
       - name: Get Repos and Mirror to Azure
         env:
-          GITHUB_ORG: BBVGermany
+          GITHUB_ORG: bbvgermany
           AZURE_ORG: ${{ secrets.ADO_ORG }}
           AZURE_PROJECT: ${{ secrets.ADO_PRO }}
           AZURE_PAT: ${{ secrets.ADO }}
@@ -37,39 +37,26 @@ jobs:
           gh repo list "$GITHUB_ORG" --limit 1000 --json name | jq -r '.[].name' > repos.txt
 
           while read REPO; do
-            echo "🔄 Syncing $REPO..."
+            echo "🔄 Checking if $REPO exists in Azure DevOps..."
 
             # Check if repo exists in Azure
             RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -u ":${AZURE_PAT}" \
               "https://dev.azure.com/$AZURE_ORG/$AZURE_PROJECT/_apis/git/repositories?searchText=$REPO&api-version=7.1-preview.1")
 
-            if [ "$RESPONSE" -eq 404 ]; then
-              echo "Creating repository $REPO in Azure DevOps..."
-              CREATE_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST -u ":${AZURE_PAT}" \
-                -H "Content-Type: application/json" \
-                -d '{
-                      "name": "'"$REPO"'",
-                      "project": { "id": "'"$AZURE_PROJECT"'" }
-                    }' \
-                "https://dev.azure.com/$AZURE_ORG/_apis/git/repositories?api-version=7.1-preview.1")
+            if [ "$RESPONSE" -eq 200 ]; then
+              echo "✅ Repository $REPO exists in Azure DevOps. Proceeding with mirroring..."
 
-              if [ "$CREATE_RESPONSE" -ne 201 ]; then
-                echo "❌ Failed to create repository $REPO. HTTP status: $CREATE_RESPONSE"
-                exit 1
-              fi
-            elif [ "$RESPONSE" -ne 200 ]; then
-              echo "❌ Unexpected response while checking repository $REPO. HTTP status: $RESPONSE"
-              exit 1
+              # Clone the repo from GitHub
+              git clone --mirror "https://$GITHUB_TOKEN@github.com/$GITHUB_ORG/$REPO.git"
+              cd "$REPO.git"
+
+              # Add Azure remote
+              git remote add azure "https://user:$AZURE_PAT@dev.azure.com/$AZURE_ORG/$AZURE_PROJECT/_git/$REPO"
+              git push --mirror azure
+
+              cd ..
+              rm -rf "$REPO.git"
+            else
+              echo "❌ Repository $REPO does not exist in Azure DevOps. Skipping..."
             fi
-
-            # Clone the repo from GitHub
-            git clone --mirror "https://$GITHUB_TOKEN@github.com/$GITHUB_ORG/$REPO.git"
-            cd "$REPO.git"
-
-            # Add Azure remote
-            git remote add azure "https://user:$AZURE_PAT@dev.azure.com/$AZURE_ORG/$AZURE_PROJECT/_git/$REPO"
-            git push --mirror azure
-
-            cd ..
-            rm -rf "$REPO.git"
           done < repos.txt
