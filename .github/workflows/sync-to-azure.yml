@@ -17,13 +17,20 @@ jobs:
       - name: Install GitHub CLI & jq
         run: |
           sudo apt update
-          sudo apt install gh jq curl -y
+          sudo apt install azure-cli -y
+          az extension add --name azure-devops
 
       - name: Authenticate GitHub CLI
         run: echo "${{ secrets.GHP }}" | gh auth login --with-token
-
-      - name: Authenticate Azure DevOps API
-        run: echo "${{ secrets.ADO }}" > azure_token.txt
+      
+      - name: Authenticate Azure CLI
+        env:
+          AZURE_PAT: ${{ secrets.ADO }}
+        run: |
+          echo "${AZURE_PAT}" | az devops login
+          az devops configure --defaults \
+            organization=https://dev.azure.com/${{ secrets.ADO_ORG }} \
+            project=${{ secrets.ADO_PRO }}
 
       - name: Get Repos and Mirror to Azure
         env:
