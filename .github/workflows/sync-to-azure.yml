@@ -34,7 +34,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GHP }}
         run: |
           echo "📥 Fetching repositories from GitHub org $GITHUB_ORG..."
-          gh repo list "$GITHUB_ORG" --limit 1000 --json name | jq -r '.[].name' > repos.txt
+          az repos list \
+          --organization "https://dev.azure.com/$ADO_ORG" \
+          --project "$ADO_PRO" \
+          --query "[].name" -o tsv > azure_repos.txt
 
           while read REPO; do
             echo "🔄 Checking if $REPO exists in Azure DevOps..."
